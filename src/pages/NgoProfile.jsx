@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
 import { getAllCampaigns } from '../utils/contract';
-import { formatEth, shortenAddress } from '../utils/helpers';
+import { shortenAddress } from '../utils/helpers';
 import TrustScoreBadge from '../components/TrustScoreBadge';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Target, Wallet, TrendingUp, CheckCircle2, Clock, Loader2, ExternalLink, Users } from 'lucide-react';
+import {
+  ArrowLeft, Target, Wallet, TrendingUp, CheckCircle2, Clock, Loader2,
+  ExternalLink, Users, Building2, Globe, Hash, Tag, BadgeCheck, Shield
+} from 'lucide-react';
 import Footer from '../components/Footer';
 
 export default function NgoProfile() {
@@ -15,15 +18,36 @@ export default function NgoProfile() {
   const [campaigns, setCampaigns] = useState([]);
   const [ngoStats, setNgoStats] = useState({});
   const [trustScore, setTrustScore] = useState(0);
+  const [ngoMeta, setNgoMeta] = useState(null);
+  const [ngoOnChain, setNgoOnChain] = useState({ isRegistered: false, isVerified: false });
 
   useEffect(() => {
     async function fetchNgoData() {
       if (!contract || !address) return;
       setLoading(true);
       try {
+        // Fetch NGO profile from contract
+        try {
+          const isRegistered = await contract.isRegisteredNGO(address);
+          if (isRegistered) {
+            const profile = await contract.getNGOProfile(address);
+            setNgoOnChain({ isRegistered: true, isVerified: profile.isVerified });
+            // Fetch IPFS metadata
+            if (profile.ipfsMetadataHash) {
+              try {
+                const res = await fetch(`https://gateway.pinata.cloud/ipfs/${profile.ipfsMetadataHash}`);
+                const data = await res.json();
+                setNgoMeta(data);
+              } catch {}
+            }
+          }
+        } catch {}
+
+        // Fetch campaigns
         const allCampaigns = await getAllCampaigns(contract);
         const ngoCampaigns = allCampaigns.filter(Boolean).filter(c => c.ngoAddress?.toLowerCase() === address.toLowerCase());
         setCampaigns(ngoCampaigns);
+
         let totalRaised = 0, totalMilestones = 0, completedMilestones = 0, onTimeMilestones = 0, completedCampaigns = 0;
         ngoCampaigns.forEach(c => {
           totalRaised += Number(c.raisedFunds || 0) / 1_000_000;
@@ -34,12 +58,14 @@ export default function NgoProfile() {
           onTimeMilestones += done.length;
           if (ms.every(m => m.fundsReleased)) completedCampaigns++;
         });
+
         let score = 0;
         if (trustScoreContract) {
           try { score = Number(await trustScoreContract.getTrustScore(address)); }
           catch { score = Math.min(onTimeMilestones * 10 + completedCampaigns * 20, 100); }
         } else { score = Math.min(onTimeMilestones * 10 + completedCampaigns * 20, 100); }
         setTrustScore(score);
+
         setNgoStats({
           totalRaised: totalRaised.toFixed(4), campaignCount: ngoCampaigns.length,
           completedCampaigns, totalMilestones, completedMilestones,
@@ -79,13 +105,58 @@ export default function NgoProfile() {
           <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <TrustScoreBadge score={trustScore} size="xl" />
             <div style={{ flex: 1, minWidth: 280 }}>
-              <h2 style={{ marginBottom: 6 }}>NGO Profile</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                <h2 style={{ margin: 0 }}>{ngoMeta?.name || 'NGO Profile'}</h2>
+                {ngoOnChain.isVerified && (
+                  <span className="badge badge-released" style={{ fontSize: 11 }}>
+                    <BadgeCheck size={12} /> Verified
+                  </span>
+                )}
+                {ngoOnChain.isRegistered && !ngoOnChain.isVerified && (
+                  <span className="badge badge-locked" style={{ fontSize: 11 }}>
+                    <Building2 size={12} /> Registered
+                  </span>
+                )}
+              </div>
+
               <a href={`https://amoy.polygonscan.com/address/${address}`} target="_blank" rel="noopener noreferrer"
-                className="mono" style={{ fontSize: 13, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none', wordBreak: 'break-all' }}>
-                {address} <ExternalLink size={12} />
+                className="mono" style={{ fontSize: 12, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none', wordBreak: 'break-all', marginBottom: 12 }}>
+                {address} <ExternalLink size={11} />
               </a>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 20 }}>
+              {/* IPFS Metadata Details */}
+              {ngoMeta && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, padding: 14, borderRadius: 'var(--radius)', background: 'var(--surface2)' }}>
+                  {ngoMeta.mission && (
+                    <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5, fontStyle: 'italic' }}>
+                      "{ngoMeta.mission}"
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                    {ngoMeta.category && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text2)' }}>
+                        <Tag size={11} style={{ color: 'var(--accent)' }} /> {ngoMeta.category}
+                      </span>
+                    )}
+                    {ngoMeta.website && (
+                      <a href={ngoMeta.website} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}>
+                        <Globe size={11} /> Website
+                      </a>
+                    )}
+                    {ngoMeta.darpanId && (
+                      <a href={`https://ngodarpan.gov.in/index.php/home/statewise_ngo/search_result_ngo?state=&district=&ngo_type=&ngo_name=&unique_id=${ngoMeta.darpanId}`}
+                        target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--blue)', textDecoration: 'none' }}>
+                        <Hash size={11} /> DARPAN: {ngoMeta.darpanId}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Stats Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                 {statCards.map((s, i) => (
                   <div key={i} className="card" style={{ padding: 14, textAlign: 'center' }}>
                     <s.icon size={16} style={{ color: s.color, margin: '0 auto 6px' }} />

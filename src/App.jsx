@@ -20,6 +20,7 @@ const NgoProfile = lazy(() => import('./pages/NgoProfile'));
 const Confirm = lazy(() => import('./pages/Confirm'));
 const Whistleblower = lazy(() => import('./pages/Whistleblower'));
 const MyReports = lazy(() => import('./pages/MyReports'));
+const RegisterNGO = lazy(() => import('./pages/RegisterNGO'));
 
 const pageTransition = {
   initial: { opacity: 0, y: 12 },
@@ -57,6 +58,7 @@ function AnimatedRoutes() {
             <Route path="/confirm/:hash" element={<Confirm />} />
             <Route path="/report" element={<Whistleblower />} />
             <Route path="/my-reports" element={<MyReports />} />
+            <Route path="/register-ngo" element={<RegisterNGO />} />
           </Routes>
         </Suspense>
       </motion.main>

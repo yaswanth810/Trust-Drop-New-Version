@@ -75,6 +75,14 @@
     "function getFraudReportCount() view returns (uint256)",
     "function getFraudReportBasic(uint256 _reportId) view returns (address reporter, uint256 campaignId, uint256 milestoneIndex, string evidenceIPFS, string reason)",
     "function getFraudReportResult(uint256 _reportId) view returns (bool resolved, bool upheld, uint256 stakedAmount)",
-    "function getReporterReports(address _reporter) view returns (uint256[])"
+    "function getReporterReports(address _reporter) view returns (uint256[])",
+
+    "event NGORegistered(address indexed ngo, string ipfsHash)",
+    "event NGOVerified(address indexed ngo)",
+    "function registerNGO(string ipfsHash)",
+    "function verifyNGO(address ngo)",
+    "function getNGOProfile(address ngo) view returns (string ipfsMetadataHash, bool isVerified, uint256 registeredAt)",
+    "function isRegisteredNGO(address) view returns (bool)",
+    "function ngoProfiles(address) view returns (string ipfsMetadataHash, bool isVerified, uint256 registeredAt)"
   ]
 }

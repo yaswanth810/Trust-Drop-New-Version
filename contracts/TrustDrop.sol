@@ -84,6 +84,12 @@ contract TrustDrop is ReentrancyGuard, Ownable {
         uint256 stakedAmount;
     }
 
+    struct NGOProfile {
+        string  ipfsMetadataHash;
+        bool    isVerified;
+        uint256 registeredAt;
+    }
+
     // ============ State Variables ============
     uint256 public campaignCount;
 
@@ -102,6 +108,9 @@ contract TrustDrop is ReentrancyGuard, Ownable {
 
     FraudReport[] public fraudReports;
     mapping(address => uint256[]) public reporterReports;
+
+    mapping(address => NGOProfile) public ngoProfiles;
+    mapping(address => bool)       public isRegisteredNGO;
 
     ITrustScore   public trustScoreContract;
     ITrustDropNFT public nftContract;
@@ -124,6 +133,8 @@ contract TrustDrop is ReentrancyGuard, Ownable {
     event EmergencyActivated(uint256 indexed campaignId);
     event FraudReported(uint256 indexed campaignId, uint256 milestoneIndex, address reporter, uint256 reportId);
     event FraudReportResolved(uint256 indexed reportId, bool upheld);
+    event NGORegistered(address indexed ngo, string ipfsHash);
+    event NGOVerified(address indexed ngo);
 
     // ============ Constructor ============
     constructor(address _trustScoreAddr, address _nftAddr) Ownable(msg.sender) {
@@ -156,7 +167,29 @@ contract TrustDrop is ReentrancyGuard, Ownable {
 
     // ============ External Functions ============
 
+    // ============ NGO Registration ============
+
+    function registerNGO(string memory ipfsHash) external {
+        ngoProfiles[msg.sender] = NGOProfile(ipfsHash, false, block.timestamp);
+        isRegisteredNGO[msg.sender] = true;
+        emit NGORegistered(msg.sender, ipfsHash);
+    }
+
+    function verifyNGO(address ngo) external onlyOwner {
+        require(isRegisteredNGO[ngo], "NGO not registered");
+        ngoProfiles[ngo].isVerified = true;
+        emit NGOVerified(ngo);
+    }
+
+    function getNGOProfile(address ngo) external view returns (string memory ipfsMetadataHash, bool isVerified, uint256 registeredAt) {
+        NGOProfile storage p = ngoProfiles[ngo];
+        return (p.ipfsMetadataHash, p.isVerified, p.registeredAt);
+    }
+
+    // ============ Campaign Functions ============
+
     function createCampaign(CampaignParams calldata p) external returns (uint256) {
+        require(isRegisteredNGO[msg.sender], "Register as NGO first");
         require(p.milestoneDescriptions.length == p.milestoneAmounts.length,   "Mismatched arrays");
         require(p.milestoneDescriptions.length  > 0,                           "Need at least one milestone");
         require(p.milestoneDescriptions.length == p.milestoneDeadlines.length, "Mismatched deadline array");

@@ -68,8 +68,11 @@ export default function CreateCampaign() {
           </button>
 
           <h2 style={{ marginBottom: 4 }}>Create a Campaign</h2>
-          <p style={{ color: 'var(--text2)', fontSize: 15, marginBottom: 32 }}>
+          <p style={{ color: 'var(--text2)', fontSize: 15, marginBottom: 12 }}>
             Define your campaign milestones and fund allocation
+          </p>
+          <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 32 }}>
+            Not registered? <a href="/register-ngo" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Register your NGO →</a> before creating a campaign.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 32, alignItems: 'start' }}>

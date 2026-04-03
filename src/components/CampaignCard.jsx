@@ -1,24 +1,41 @@
 import { Link } from 'react-router-dom';
 import { formatUSDC } from '../utils/helpers';
-import { Clock, Users, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { Clock, Users, AlertTriangle, ArrowUpRight, BadgeCheck, Building2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useWeb3 } from '../context/Web3Context';
 
 export default function CampaignCard({ campaign }) {
+  const { contract } = useWeb3();
   const {
     campaignId, title, description, raisedFunds, totalFunds,
-    milestones, isEmergency, donorCount, ngo,
+    milestones, isEmergency, donorCount, ngoAddress,
   } = campaign;
+
+  const [ngoStatus, setNgoStatus] = useState(null); // null | 'verified' | 'registered'
+
+  useEffect(() => {
+    async function checkNGO() {
+      if (!contract || !ngoAddress) return;
+      try {
+        const isRegistered = await contract.isRegisteredNGO(ngoAddress);
+        if (isRegistered) {
+          const profile = await contract.getNGOProfile(ngoAddress);
+          setNgoStatus(profile.isVerified ? 'verified' : 'registered');
+        }
+      } catch {}
+    }
+    checkNGO();
+  }, [contract, ngoAddress]);
 
   const raised = Number(raisedFunds || 0) / 1_000_000;
   const total = Number(totalFunds || 0) / 1_000_000;
   const pct = total > 0 ? Math.min((raised / total) * 100, 100) : 0;
   const allComplete = milestones?.every((m) => m.fundsReleased);
 
-  // Extract category from description prefix like "[Education]"
   const catMatch = description?.match(/^\[(\w+)\]/);
   const category = catMatch ? catMatch[1] : null;
   const cleanDesc = description?.replace(/^\[\w+\]\s*/, '') || '';
 
-  // Next deadline
   const now = Date.now() / 1000;
   const nextDeadline = milestones?.find(m => !m.fundsReleased && m.deadline > now)?.deadline;
   const daysLeft = nextDeadline ? Math.max(0, Math.ceil((nextDeadline - now) / 86400)) : null;
@@ -29,10 +46,20 @@ export default function CampaignCard({ campaign }) {
         {/* Header */}
         <div style={{ padding: '20px 20px 16px' }}>
           {/* Badges row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
             {isEmergency && (
               <span className="badge badge-emergency" style={{ fontSize: 10, padding: '2px 8px' }}>
                 <AlertTriangle size={10} /> Emergency
+              </span>
+            )}
+            {ngoStatus === 'verified' && (
+              <span className="badge badge-released" style={{ fontSize: 10, padding: '2px 8px' }}>
+                <BadgeCheck size={10} /> Verified NGO
+              </span>
+            )}
+            {ngoStatus === 'registered' && (
+              <span className="badge badge-locked" style={{ fontSize: 10, padding: '2px 8px' }}>
+                <Building2 size={10} /> NGO Registered
               </span>
             )}
             {category && (

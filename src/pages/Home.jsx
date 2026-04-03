@@ -132,7 +132,7 @@ export default function Home() {
         <div style={{
           position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
           width: '120%', height: '60%',
-          background: 'radial-gradient(ellipse 80% 50% at 50% 100%, rgba(12,124,106,0.07) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse 80% 50% at 50% 100%, rgba(108,92,231,0.06) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
         <div className="page-container" style={{ position: 'relative', textAlign: 'center' }}>
@@ -160,6 +160,9 @@ export default function Home() {
               <Link to="/create" className="btn-dark btn-lg">Start a Campaign</Link>
               <a href="#campaigns" className="btn-secondary btn-lg">Explore Campaigns ↓</a>
             </div>
+            <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 16 }}>
+              Are you an NGO? <Link to="/register-ngo" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Register your NGO →</Link>
+            </p>
           </motion.div>
         </div>
       </section>
