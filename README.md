@@ -1,151 +1,256 @@
-# TrustDrop 💧
+# 🛡️ TrustDrop — Blockchain-Powered NGO Fund Transparency
 
-**Blockchain-Powered NGO Fund Transparency Platform**
+> Every Rupee. Tracked. Trusted. Transparent.
 
-TrustDrop is a full-stack Web3 decentralized application built to bring complete transparency and accountability to charitable donations and NGO relief campaigns. By leveraging Ethereum smart contracts, donors can fund campaigns with confidence, knowing their contributions are locked and only released when real-world milestones are verified by independent validators.
-
----
-
-## 🚀 Features
-
-### Core Features
-- **Milestone-Based Funding**: NGOs define specific goals, timelines, and budgets. Funds are only dispensed upon milestone completion.
-- **Validator Approval System**: A decentralized network of validators (who stake 0.01 ETH) verify proof of work before any funds are released. Requires a 3/5 consensus.
-- **Immutable Proof via IPFS**: All milestone execution proofs (images, documents) are permanently stored on IPFS.
-- **Refund Mechanism**: If an NGO fails to deliver, the contract can be frozen and all remaining funds returned to original donors.
-
-### Advanced Features (v2)
-- **🏆 TrustScore System**: On-chain NGO reputation engine (0-100 score) with Gold/Silver/Bronze/Unverified badges visible on every campaign card.
-- **📊 Analytics Dashboard**: Full analytics page with 4 interactive Recharts charts (Line, Bar, Pie, Area) and 6 stat cards showing platform performance.
-- **🎖️ NFT Donor Badges**: ERC-721 NFT badges automatically awarded at Bronze (0.01 ETH), Silver (0.05 ETH), Gold (0.1 ETH), and Platinum (0.5 ETH) donation tiers.
-- **📡 Real-Time Activity Feed**: Live blockchain event listener showing donations, proof submissions, milestone approvals, and fund releases in real-time.
-- **🔍 Campaign Search & Filter**: Full-text search, category filters (Relief/Education/Medical/Infrastructure/Environment), status filters, sort options, and URL query parameter sync.
-- **🌙 Dark / Light Mode**: Premium dark navy and clean light themes with smooth 200ms transitions, persisted in localStorage.
-- **🌐 Multi-Language (i18n)**: English and Telugu (తెలుగు) language support with instant toggle via globe icon.
-- **👨‍⚖️ Validator Leaderboard**: Validator reputation system with accuracy scores, vote counts, earnings tracking, and top-10 leaderboard.
-- **📱 PWA Support**: Progressive Web App with offline caching, service worker, and installable on mobile devices.
-- **🔖 Campaign Categories**: Campaigns tagged with categories (Relief, Education, Medical, Infrastructure, Environment) for better discoverability.
+TrustDrop is a decentralized platform that ensures NGO fund transparency through milestone-based fund release, multi-validator verification, and comprehensive anti-fraud systems. Built on **Polygon Amoy** with **USDC** stablecoin integration.
 
 ---
 
-## 🛠️ Technology Stack
+## ✨ Key Features
+
+### 💰 Core Platform
+- **Milestone-Based Fund Release** — Donations locked in smart contracts, released only when milestones are verified
+- **3/5 Multi-Validator Consensus** — Independent validators must approve before funds move
+- **USDC Stablecoin** — No volatility risk; donations denominated in USD
+- **UPI Fiat On-Ramp** — Donate in ₹ via UPI (Transak secure session-based integration), no crypto knowledge needed
+- **Donor NFT Badges** — Bronze / Silver / Gold / Platinum badges for donors
+- **On-Chain Receipts** — Every donation generates a verifiable on-chain receipt
+
+### 🔒 Anti-Fraud Systems (V3)
+- **3-Document Proof Requirement** — Invoice, GPS photo, and beneficiary list required per milestone
+- **Document-Based Validator Review** — Validators must review all 3 proof documents before approval is unlocked (replaces previous QR-based verification)
+- **20% Seed Release** — Automatic 20% advance when campaign fully funded (50% for emergencies)
+- **48-Hour Challenge Window** — Anyone can challenge a milestone approval within 48 hours
+- **Market Rate Oracle** — On-chain price checking flags suspicious invoices (NORMAL / WARNING / FLAGGED)
+- **GST Verification** — Invoice GST numbers validated against Indian government database
+- **Emergency Mode** — 2 validator votes activate fast-track approvals for disaster response
+- **Whistleblower Rewards** — Report fraud anonymously, earn 10% of locked funds if upheld
+
+### 🌍 Localization & UX
+- **Bilingual** — Full English + Telugu (తెలుగు) support
+- **Dark / Light Mode** — System-aware theme switching
+- **Premium Fintech UI** — Mercury-inspired design with indigo accent, clean typography, and micro-animations
+- **Code Splitting** — React.lazy() for optimal load times
+- **Network Safety** — Auto-detect wrong chain with one-click switch to Polygon Amoy
+
+---
+
+## 🏗️ Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | React 19, Vite 8, Tailwind CSS v3, Framer Motion, Recharts |
-| **Web3** | ethers.js v6 |
-| **Smart Contracts** | Solidity ^0.8.24, Hardhat, OpenZeppelin |
-| **Network** | Ethereum Sepolia Testnet |
-| **Storage** | IPFS via Pinata REST API |
-| **i18n** | react-i18next, i18next |
-| **PWA** | vite-plugin-pwa, Workbox |
+| **Blockchain** | Polygon Amoy Testnet (Chain ID: 80002) |
+| **Smart Contracts** | Solidity 0.8.24, OpenZeppelin (ReentrancyGuard, Ownable, ERC-721) |
+| **Stablecoin** | Mock USDC (6 decimals) |
+| **Frontend** | React 19, Vite 8, Framer Motion |
+| **Styling** | Premium CSS Design System (Instrument Serif + DM Sans + DM Mono) |
+| **IPFS** | Pinata for document storage |
+| **Fiat On-Ramp** | Transak Secure Widget (UPI / INR) via backend session proxy |
+| **Oracle** | MarketRateOracle (custom on-chain) |
+| **Charts** | Recharts |
+| **Wallet** | MetaMask (ethers.js v6) |
 
 ---
 
-## 📜 Smart Contracts
+## 📦 Smart Contracts
 
-| Contract | Address | Purpose |
-|----------|---------|---------|
-| **TrustDrop** | `0x2d7087D83626526d5C4e8D976b1D3f6CBF741807` | Main platform: campaigns, donations, milestones, validators |
-| **TrustScore** | `0xEDf7b9864b40065CDD023D726Cc8A0D2D7A038c9` | NGO reputation engine (0-100 trust scoring) |
-| **TrustDropNFT** | `0x2E98053Fccb781c05f0C63094C6c05e590D2656B` | ERC-721 donor badge NFTs (Bronze/Silver/Gold/Platinum) |
+| Contract | Description |
+|----------|------------|
+| **TrustDrop.sol** | Main contract: campaigns, milestones, donations, anti-fraud, challenge window |
+| **TrustScore.sol** | NGO reputation tracking (on-chain trust score) |
+| **TrustDropNFT.sol** | Donor badge NFTs (ERC-721) — Bronze/Silver/Gold/Platinum tiers |
+| **MarketRateOracle.sol** | Market rate reference for invoice fraud detection |
 
-All contracts are deployed on **Sepolia Testnet** and verified on Sourcify, Blockscout, and Routescan.
+### Deployed Addresses (Polygon Amoy)
+
+| Contract | Address |
+|----------|---------|
+| **TrustDrop** | `0xEe993650Aa439206D2ec0725413AfE3B9e74b37C` |
+| **TrustScore** | `0x1cfC9f1830C6468Bb60B04D4a8F5624311d89fa6` |
+| **TrustDropNFT** | `0xa757964991729cb41D4fa1fB662d5022b13F524a` |
+| **MarketRateOracle** | `0x7253c9b6E4f7Fd2B1fb9F0480890E3dE4605b70F` |
+| **Mock USDC** | `0x8B0180f2101c8260d49339abfEe87927412494B4` |
+
+> All contracts verified on [Sourcify](https://sourcify.dev/) and viewable on [Polygon Amoy Explorer](https://amoy.polygonscan.com).
 
 ---
 
-## ⚙️ Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- MetaMask browser extension (configured for Sepolia)
-- Sepolia testnet ETH (from any standard faucet)
+- Node.js 18+
+- MetaMask browser extension
+- Polygon Amoy testnet MATIC (from [faucet](https://faucet.polygon.technology/))
 
-### Installation
+### Setup
+```bash
+# Clone and install
+git clone https://github.com/yaswanth810/Trust-Drop-New-Version.git
+cd Trust-Drop-New-Version
+npm install --legacy-peer-deps
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yaswanth810/Trust-Drop.git
-   cd Trust-Drop
-   ```
+# Configure environment
+cp .env.example .env
+# Edit .env with your contract addresses and Transak keys
 
-2. *(Optional)* **Install Dependencies**
-   ```bash
-   npm install --legacy-peer-deps
-   ```
+# Start development server
+npm run dev
+```
 
-3. **Environment Setup**
-   Create a `.env` file:
-   ```env
-   VITE_CONTRACT_ADDRESS=0x2d7087D83626526d5C4e8D976b1D3f6CBF741807
-   VITE_TRUSTSCORE_ADDRESS=0xEDf7b9864b40065CDD023D726Cc8A0D2D7A038c9
-   VITE_NFT_ADDRESS=0x2E98053Fccb781c05f0C63094C6c05e590D2656B
-   VITE_SEPOLIA_RPC_URL=https://rpc.sepolia.org
-   VITE_PINATA_API_KEY=your_pinata_api_key
-   VITE_PINATA_SECRET_KEY=your_pinata_secret_key
-   ```
+### Deploy Contracts (via Remix)
+1. Open [Remix IDE](https://remix.ethereum.org/)
+2. Import contracts from `contracts/` folder
+3. Compile with Solidity 0.8.24+
+4. Deploy in order:
+   - **TrustScore.sol** → no constructor args
+   - **TrustDropNFT.sol** → no constructor args
+   - **MarketRateOracle.sol** → no constructor args
+   - **TrustDrop.sol** → pass TrustScore & NFT addresses as constructor args
+5. Transfer ownership of TrustScore & TrustDropNFT to the TrustDrop contract address
+6. Update `.env` with deployed addresses
 
-4. **Run the Development Server**
-   ```bash
-   npm run dev
-   ```
-
-5. Open `http://localhost:5173` in your browser.
+### MetaMask Setup
+1. Open MetaMask → Settings → Networks → Add Network
+2. **Network Name:** Polygon Amoy
+3. **RPC URL:** `https://rpc-amoy.polygon.technology`
+4. **Chain ID:** `80002`
+5. **Currency:** MATIC
+6. **Explorer:** `https://amoy.polygonscan.com`
 
 ---
 
-## 📖 How It Works
+## 🎯 Demo Walkthrough
 
-1. **NGO Creates Campaign** → Define milestones with categories, fund allocations, and deadlines.
-2. **Donors Contribute** → ETH is locked securely in the TrustDrop smart contract.
-3. **NGO Submits Proof** → Upload photo/document evidence to IPFS via Pinata.
-4. **Validators Approve** → 3/5 staked validators review proof; on approval, ETH auto-releases to NGO.
-5. **Trust Scores Update** → NGO reputation updates on-chain based on milestone performance.
-6. **Donor Badges Mint** → Donors crossing tier thresholds earn ERC-721 NFT supporter badges.
+### As a Donor 🧑‍💻
+1. Connect MetaMask → Switch to Polygon Amoy
+2. Browse campaigns on Home page (emergency campaigns pinned to top)
+3. Click a campaign → View milestone progress
+4. Donate via **UPI** (₹) or **Crypto** (USDC) tab
+5. Track your donations on **My Donations** page (accessible from navbar)
+6. Earn NFT badges based on cumulative donation amount
+
+### As an NGO 🏢
+1. Create Campaign → Set milestones with descriptions, amounts, and deadlines
+2. When milestone is complete → Submit 3-Doc Proof (Invoice + GPS Photo + Beneficiary List)
+3. System auto-checks: Market rate oracle + GST verification
+4. Wait for 3 validator approvals → Funds released after 48h challenge window
+
+### As a Validator ✅
+1. Register as Validator (stake 0.01 MATIC)
+2. Review pending milestones on Validator Dashboard
+3. **View all 3 documents** — Invoice, GPS Photo, and Beneficiary List (must review all before approval button unlocks)
+4. See price check badges and GST verification status
+5. Approve milestone → Funds scheduled for release after challenge window
+
+### Report Fraud 🚨
+1. Navigate to Report Fraud page
+2. Select campaign + milestone + reason
+3. Upload evidence to IPFS → Pay 0.001 MATIC anti-spam stake
+4. Track report status on My Reports page
+5. If upheld: campaign frozen + reporter receives 10% reward
+
+---
+
+## 📁 Project Structure
+```
+Trust-Drop/
+├── contracts/                # Solidity smart contracts
+│   ├── TrustDrop.sol         # Main contract (V3 with anti-fraud)
+│   ├── TrustScore.sol        # NGO reputation system
+│   ├── TrustDropNFT.sol      # Donor badge NFTs (ERC-721)
+│   └── MarketRateOracle.sol  # Price fraud detection oracle
+├── plugins/
+│   └── transak-proxy.js      # Vite server middleware for Transak API
+├── scripts/
+│   ├── deploy.js             # Deployment script
+│   └── seedDemoData.js       # Demo data seeding
+├── src/
+│   ├── abi/                  # Contract ABIs (human-readable + JSON)
+│   ├── components/           # Reusable UI components
+│   │   ├── ActivityFeed.jsx  # Real-time on-chain event feed
+│   │   ├── BadgeShowcase.jsx # NFT badge display grid
+│   │   ├── CampaignCard.jsx  # Campaign display card
+│   │   ├── DonateModal.jsx   # Crypto + UPI donation modal
+│   │   ├── HeroSection.jsx   # Premium landing hero
+│   │   ├── MilestoneTracker.jsx  # Visual milestone stepper
+│   │   ├── Navbar.jsx        # Responsive navigation
+│   │   ├── Footer.jsx        # Site footer
+│   │   ├── NetworkBanner.jsx # Wrong-chain detector
+│   │   ├── OnChainReceipt.jsx # Transaction receipt card
+│   │   ├── QRGenerator.jsx   # Beneficiary QR code generator
+│   │   ├── TransakWidget.jsx # UPI fiat on-ramp (secure session)
+│   │   ├── TrustScoreBadge.jsx # Circular trust score gauge
+│   │   └── ValidatorPanel.jsx # Validator 3-doc review panel
+│   ├── context/              # React contexts
+│   │   ├── Web3Context.jsx   # Wallet & contract state
+│   │   └── ThemeContext.jsx  # Dark/light mode
+│   ├── pages/                # Route pages
+│   │   ├── Home.jsx          # Campaign listing + stats
+│   │   ├── CampaignDetail.jsx # Campaign detail + donate + proof
+│   │   ├── CreateCampaign.jsx # Campaign creation form
+│   │   ├── ValidatorDashboard.jsx # Validator review panel
+│   │   ├── Analytics.jsx     # Platform analytics + charts
+│   │   ├── MyDonations.jsx   # Donor history + receipts + badges
+│   │   ├── Whistleblower.jsx # Fraud reporting
+│   │   ├── MyReports.jsx     # Report tracking
+│   │   ├── Confirm.jsx       # Beneficiary confirmation (bilingual)
+│   │   └── NgoProfile.jsx    # NGO trust score profile
+│   ├── utils/                # Helpers & utilities
+│   │   ├── contract.js       # Smart contract interactions
+│   │   ├── helpers.js        # Formatting & USDC utils
+│   │   ├── oracle.js         # Market rate & GST verification
+│   │   └── ipfs.js           # Pinata IPFS upload
+│   ├── locales/              # i18n translations
+│   │   ├── en.json           # English
+│   │   └── te.json           # Telugu (తెలుగు)
+│   ├── App.jsx               # Router + lazy loading
+│   └── index.css             # Premium design system (v3)
+├── plugins/
+│   └── transak-proxy.js      # Secure Transak session proxy
+└── vite.config.js            # Vite build configuration
+```
+
+---
+
+## 🔐 Security Features
+
+- **ReentrancyGuard** — All fund transfer functions protected
+- **Ownable Access Control** — Admin operations restricted to contract owner
+- **Challenge Window** — 48-hour cooling period before fund release
+- **Anti-Spam Staking** — Validators stake 0.01 MATIC, fraud reporters stake 0.001 MATIC
+- **On-Chain Verification** — All proofs, votes, and confirmations recorded immutably
+- **Market Rate Oracle** — Automated invoice cost validation against category benchmarks
+- **Secure Transak Integration** — API secret kept server-side via Vite middleware proxy
 
 ---
 
 ## 🎨 Design System
 
-- **Dark Theme**: Navy backgrounds (`#0A1628`, `#0F213A`), Accent green (`#00C896`)
-- **Light Theme**: Clean white (`#F8FAFC`), Green accent (`#059669`)
-- **Typography**: Inter (Google Fonts)
-- **Effects**: Glassmorphism, gradient text, shimmer skeletons, micro-animations
-- **Responsive**: Mobile-first, 375px+ support
+TrustDrop uses a premium fintech-grade design system inspired by Mercury:
+
+- **Typography**: Instrument Serif (headings), DM Sans (body), DM Mono (code/amounts)
+- **Color Palette**: Indigo (#6C5CE7) accent, cool white backgrounds, rich black text
+- **Components**: Card-based layouts, semantic badges, animated progress bars
+- **Themes**: Light-first with full dark mode support
+- **Animations**: Framer Motion micro-interactions, smooth page transitions
 
 ---
 
-## 📂 Project Structure
+## 🔗 Links
 
-```
-src/
-├── abi/                    # Contract ABIs (TrustDrop, TrustScore, TrustDropNFT)
-├── components/             # Reusable UI components
-│   ├── ActivityFeed.jsx    # Real-time blockchain event feed
-│   ├── BadgeShowcase.jsx   # NFT badge grid with tier display
-│   ├── CampaignCard.jsx    # Campaign card with TrustScore badge
-│   ├── TrustScoreBadge.jsx # Animated circular gauge (0-100)
-│   ├── SkeletonCard.jsx    # Shimmer loading placeholder
-│   ├── Navbar.jsx          # Nav with theme/language toggles
-│   └── ...
-├── context/                # React contexts
-│   ├── Web3Context.jsx     # Wallet + 3 contract instances
-│   └── ThemeContext.jsx     # Dark/light mode
-├── locales/                # Translation files (en.json, te.json)
-├── pages/                  # Route pages
-│   ├── Analytics.jsx       # 4 charts + 6 stat cards
-│   ├── NgoProfile.jsx      # On-chain NGO reputation profile
-│   └── ...
-├── utils/                  # Helpers, contract wrappers, IPFS
-└── i18n.js                 # i18next configuration
-contracts/
-├── TrustDrop.sol           # Main platform contract
-├── TrustScore.sol          # NGO reputation engine
-└── TrustDropNFT.sol        # ERC-721 donor badges
-```
+- **GitHub:** [github.com/yaswanth810/Trust-Drop-New-Version](https://github.com/yaswanth810/Trust-Drop-New-Version)
+- **Polygon Amoy Explorer:** [amoy.polygonscan.com](https://amoy.polygonscan.com)
+- **IPFS Gateway:** [gateway.pinata.cloud](https://gateway.pinata.cloud)
+- **Transak:** [transak.com](https://transak.com)
 
 ---
 
-## 📄 License
+## 👥 Team
 
-This project is licensed under the MIT License.
+Built for Hackathon 2026 — Vizag, India 🇮🇳
+
+---
+
+## 📝 License
+
+MIT © 2026 TrustDrop Team

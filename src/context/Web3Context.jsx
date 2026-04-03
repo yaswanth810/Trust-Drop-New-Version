@@ -3,13 +3,18 @@ import { ethers } from 'ethers';
 import TrustDropABI from '../abi/TrustDrop.json';
 import TrustScoreABI from '../abi/TrustScore.json';
 import TrustDropNFTABI from '../abi/TrustDropNFT.json';
+import { getUSDCBalance } from '../utils/contract';
 
 const Web3Context = createContext(null);
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 const TRUSTSCORE_ADDRESS = import.meta.env.VITE_TRUSTSCORE_ADDRESS;
 const NFT_ADDRESS = import.meta.env.VITE_NFT_ADDRESS;
-const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111
+const CHAIN_ID = import.meta.env.VITE_CHAIN_ID || '80002';
+const CHAIN_ID_HEX = '0x' + parseInt(CHAIN_ID).toString(16); // 0x13882
+const CHAIN_NAME = import.meta.env.VITE_CHAIN_NAME || 'Polygon Amoy';
+const POLYGON_RPC = import.meta.env.VITE_POLYGON_RPC || 'https://rpc-amoy.polygon.technology';
+const EXPLORER_URL = import.meta.env.VITE_EXPLORER_ADDRESS_URL || 'https://amoy.polygonscan.com';
 
 export function Web3Provider({ children }) {
   const [account, setAccount] = useState(null);
@@ -20,18 +25,20 @@ export function Web3Provider({ children }) {
   const [nftContract, setNftContract] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [networkName, setNetworkName] = useState('');
-  const [balance, setBalance] = useState('0');
+  const [balance, setBalance] = useState('0');         // Native MATIC balance
+  const [usdcBalance, setUsdcBalance] = useState('0'); // USDC balance (human-readable)
   const [loading, setLoading] = useState(false);
+  const [pendingProofCount, setPendingProofCount] = useState(0);
 
   const initializeContracts = useCallback(async (signerInstance) => {
-    // Main TrustDrop contract
+    let mainContract = null;
+
     if (CONTRACT_ADDRESS && CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000') {
-      const mainContract = new ethers.Contract(CONTRACT_ADDRESS, TrustDropABI.abi, signerInstance);
+      mainContract = new ethers.Contract(CONTRACT_ADDRESS, TrustDropABI.abi, signerInstance);
       setContract(mainContract);
     }
 
-    // TrustScore contract
-    if (TRUSTSCORE_ADDRESS) {
+    if (TRUSTSCORE_ADDRESS && TRUSTSCORE_ADDRESS !== '0x0000000000000000000000000000000000000000') {
       try {
         const tsContract = new ethers.Contract(TRUSTSCORE_ADDRESS, TrustScoreABI.abi, signerInstance);
         setTrustScoreContract(tsContract);
@@ -40,8 +47,7 @@ export function Web3Provider({ children }) {
       }
     }
 
-    // NFT Badge contract
-    if (NFT_ADDRESS) {
+    if (NFT_ADDRESS && NFT_ADDRESS !== '0x0000000000000000000000000000000000000000') {
       try {
         const nft = new ethers.Contract(NFT_ADDRESS, TrustDropNFTABI.abi, signerInstance);
         setNftContract(nft);
@@ -49,12 +55,53 @@ export function Web3Provider({ children }) {
         console.warn('NFT contract init failed:', e);
       }
     }
+
+    // Listen for ProofSubmitted events for validator notification badge
+    if (mainContract) {
+      try {
+        const provider = mainContract.runner?.provider;
+        if (provider) {
+          const currentBlock = await provider.getBlockNumber();
+          const fromBlock = Math.max(0, currentBlock - 2000);
+          const filter = mainContract.filters.ProofSubmitted?.();
+          if (filter) {
+            const logs = await mainContract.queryFilter(filter, fromBlock, currentBlock);
+            let pending = 0;
+            for (const log of logs) {
+              try {
+                const campaignId = Number(log.args?.campaignId || log.args?.[0]);
+                const milestoneIndex = Number(log.args?.milestoneIndex || log.args?.[1]);
+                const milestone = await mainContract.getMilestone(campaignId, milestoneIndex);
+                if (milestone[2] && !milestone[4] && !milestone[7]) {
+                  pending++;
+                }
+              } catch (e) { /* skip */ }
+            }
+            setPendingProofCount(pending);
+          }
+        }
+
+        mainContract.on('ProofSubmitted', () => {
+          setPendingProofCount((prev) => prev + 1);
+        });
+        mainContract.on('MilestoneApproved', () => {
+          setPendingProofCount((prev) => Math.max(0, prev - 1));
+        });
+      } catch (e) {
+        console.warn('Event listener setup failed:', e);
+      }
+    }
   }, []);
 
-  const updateBalance = useCallback(async (providerInstance, address) => {
+  const updateBalance = useCallback(async (providerInstance, signerInstance, address) => {
     try {
+      // Native MATIC balance
       const bal = await providerInstance.getBalance(address);
       setBalance(ethers.formatEther(bal));
+
+      // USDC balance
+      const usdcBal = await getUSDCBalance(signerInstance, address);
+      setUsdcBalance((Number(usdcBal) / 1_000_000).toFixed(2));
     } catch (err) {
       console.error('Error fetching balance:', err);
     }
@@ -73,21 +120,22 @@ export function Web3Provider({ children }) {
         method: 'eth_requestAccounts',
       });
 
+      // Switch to Polygon Amoy
       try {
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: SEPOLIA_CHAIN_ID }],
+          params: [{ chainId: CHAIN_ID_HEX }],
         });
       } catch (switchError) {
         if (switchError.code === 4902) {
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
-              chainId: SEPOLIA_CHAIN_ID,
-              chainName: 'Sepolia Testnet',
-              nativeCurrency: { name: 'SepoliaETH', symbol: 'ETH', decimals: 18 },
-              rpcUrls: ['https://rpc.sepolia.org'],
-              blockExplorerUrls: ['https://sepolia.etherscan.io'],
+              chainId: CHAIN_ID_HEX,
+              chainName: CHAIN_NAME,
+              nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+              rpcUrls: [POLYGON_RPC],
+              blockExplorerUrls: [EXPLORER_URL],
             }],
           });
         }
@@ -101,9 +149,9 @@ export function Web3Provider({ children }) {
       setSigner(signerInstance);
       setAccount(address);
       setIsConnected(true);
-      setNetworkName('Sepolia Testnet');
+      setNetworkName(CHAIN_NAME);
 
-      await updateBalance(browserProvider, address);
+      await updateBalance(browserProvider, signerInstance, address);
       await initializeContracts(signerInstance);
     } catch (err) {
       console.error('Error connecting wallet:', err);
@@ -122,10 +170,12 @@ export function Web3Provider({ children }) {
         setContract(null);
         setTrustScoreContract(null);
         setNftContract(null);
+        setPendingProofCount(0);
+        setUsdcBalance('0');
       } else {
         setAccount(accounts[0]);
-        if (provider) {
-          updateBalance(provider, accounts[0]);
+        if (provider && signer) {
+          updateBalance(provider, signer, accounts[0]);
         }
       }
     };
@@ -159,8 +209,10 @@ export function Web3Provider({ children }) {
     connectWallet,
     isConnected,
     networkName,
-    balance,
+    balance,         // MATIC balance
+    usdcBalance,     // USDC balance (human-readable string)
     loading,
+    pendingProofCount,
     contractAddress: CONTRACT_ADDRESS,
     trustScoreAddress: TRUSTSCORE_ADDRESS,
     nftAddress: NFT_ADDRESS,

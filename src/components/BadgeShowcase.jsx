@@ -1,78 +1,35 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { Award, Share2, ExternalLink } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Award, Share2 } from 'lucide-react';
 
-const TIER_CONFIG = {
-  0: { name: 'Bronze Supporter', color: '#D97706', bgGrad: 'from-amber-900/30 to-amber-700/10', border: 'border-amber-600/30', threshold: '0.01+' },
-  1: { name: 'Silver Supporter', color: '#9CA3AF', bgGrad: 'from-gray-600/30 to-gray-400/10', border: 'border-gray-400/30', threshold: '0.05+' },
-  2: { name: 'Gold Supporter', color: '#FBBF24', bgGrad: 'from-yellow-700/30 to-yellow-500/10', border: 'border-yellow-500/30', threshold: '0.1+' },
-  3: { name: 'Platinum Guardian', color: '#A78BFA', bgGrad: 'from-purple-800/30 to-purple-500/10', border: 'border-purple-400/30', threshold: '0.5+' },
-};
+const TIERS = [
+  { name: 'Bronze Supporter', color: '#D97706', threshold: '$10+', emoji: '🥉' },
+  { name: 'Silver Supporter', color: '#9CA3AF', threshold: '$50+', emoji: '🥈' },
+  { name: 'Gold Supporter', color: '#FBBF24', threshold: '$100+', emoji: '🥇' },
+  { name: 'Platinum Guardian', color: '#A78BFA', threshold: '$500+', emoji: '💎' },
+];
 
-const TIER_EMOJIS = { 0: '🥉', 1: '🥈', 2: '🥇', 3: '💎' };
-
-function BadgeCard({ tier, totalDonated, campaignsSupported, delay = 0 }) {
-  const config = TIER_CONFIG[tier] || TIER_CONFIG[0];
-  const emoji = TIER_EMOJIS[tier] || '🏅';
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay, type: 'spring', stiffness: 200 }}
-      className={`glass-card overflow-hidden bg-gradient-to-br ${config.bgGrad} ${config.border}`}
-    >
-      <div className="p-6 text-center">
-        <div className="text-5xl mb-3">{emoji}</div>
-        <h3 className="font-bold text-lg mb-1" style={{ color: config.color }}>
-          {config.name}
-        </h3>
-        <p className="text-gray-400 text-sm mb-4">
-          {config.threshold} ETH donated
-        </p>
-
-        <div className="flex justify-center gap-6 text-sm text-gray-400">
-          <div>
-            <p className="font-bold text-lg" style={{ color: config.color }}>{totalDonated}</p>
-            <p className="text-xs">ETH Total</p>
-          </div>
-          <div>
-            <p className="font-bold text-lg" style={{ color: config.color }}>{campaignsSupported}</p>
-            <p className="text-xs">Campaigns</p>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-export default function BadgeShowcase({ badges = [], totalDonated = '0', campaignsSupported = 0 }) {
-  // Determine which tiers are earned based on total donation
-  const totalEth = parseFloat(totalDonated);
+export default function BadgeShowcase({ totalDonated = '0', campaignsSupported = 0 }) {
+  const totalUSDC = parseFloat(totalDonated);
   const earnedTiers = [];
-  if (totalEth >= 0.01) earnedTiers.push(0); // Bronze
-  if (totalEth >= 0.05) earnedTiers.push(1); // Silver
-  if (totalEth >= 0.1) earnedTiers.push(2);  // Gold
-  if (totalEth >= 0.5) earnedTiers.push(3);  // Platinum
+  if (totalUSDC >= 10) earnedTiers.push(0);
+  if (totalUSDC >= 50) earnedTiers.push(1);
+  if (totalUSDC >= 100) earnedTiers.push(2);
+  if (totalUSDC >= 500) earnedTiers.push(3);
 
   const handleShare = (tier) => {
-    const config = TIER_CONFIG[tier];
-    const text = `Just earned my ${config.name} badge on TrustDrop 🏆\nDonated ${totalDonated} ETH to verified NGO campaigns.\nTrack every rupee on-chain → trustdrop.app #Web3ForGood #TrustDrop`;
+    const t = TIERS[tier];
+    const text = `Just earned my ${t.name} badge on TrustDrop 🏆\nDonated ${totalDonated} USDC to verified NGO campaigns.\n#Web3ForGood #TrustDrop`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   if (earnedTiers.length === 0) {
     return (
-      <div className="glass-card p-8 text-center">
-        <Award size={40} className="text-gray-600 mx-auto mb-3" />
-        <h3 className="font-semibold mb-2">No Badges Earned Yet</h3>
-        <p className="text-gray-400 text-sm mb-4">
-          Donate to campaigns to earn NFT supporter badges!
-        </p>
-        <div className="flex justify-center gap-4 text-xs text-gray-500">
-          <span>🥉 0.01 ETH</span>
-          <span>🥈 0.05 ETH</span>
-          <span>🥇 0.1 ETH</span>
-          <span>💎 0.5 ETH</span>
+      <div className="card" style={{ padding: '32px 24px', textAlign: 'center' }}>
+        <Award size={36} style={{ color: 'var(--border2)', margin: '0 auto 10px' }} />
+        <h4 style={{ marginBottom: 6 }}>No Badges Earned Yet</h4>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 12 }}>Donate to campaigns to earn NFT supporter badges!</p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 12, color: 'var(--text3)' }}>
+          {TIERS.map((t, i) => <span key={i}>{t.emoji} {t.threshold}</span>)}
         </div>
       </div>
     );
@@ -80,44 +37,38 @@ export default function BadgeShowcase({ badges = [], totalDonated = '0', campaig
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold flex items-center gap-2">
-          <Award size={20} className="text-accent" />
-          Your NFT Badges
-        </h3>
-        {earnedTiers.length > 0 && (
-          <button
-            onClick={() => handleShare(earnedTiers[earnedTiers.length - 1])}
-            className="btn-secondary !py-1.5 !px-3 text-xs"
-          >
-            <Share2 size={12} />
-            Share on X
-          </button>
-        )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <h4 style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Award size={16} style={{ color: 'var(--accent)' }} /> Your NFT Badges
+        </h4>
+        <button onClick={() => handleShare(earnedTiers[earnedTiers.length - 1])} className="btn-secondary btn-sm">
+          <Share2 size={11} /> Share
+        </button>
       </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[0, 1, 2, 3].map((tier) => {
-          const earned = earnedTiers.includes(tier);
-          const config = TIER_CONFIG[tier];
-          return earned ? (
-            <BadgeCard
-              key={tier}
-              tier={tier}
-              totalDonated={totalDonated}
-              campaignsSupported={campaignsSupported}
-              delay={tier * 0.1}
-            />
-          ) : (
-            <div
-              key={tier}
-              className="glass-card-static p-6 text-center opacity-40 grayscale"
-            >
-              <div className="text-4xl mb-2">{TIER_EMOJIS[tier]}</div>
-              <h4 className="font-medium text-sm mb-1">{config.name}</h4>
-              <p className="text-gray-500 text-xs">{config.threshold} ETH</p>
-              <p className="text-gray-600 text-xs mt-2">🔒 Locked</p>
-            </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+        {TIERS.map((tier, i) => {
+          const earned = earnedTiers.includes(i);
+          return (
+            <motion.div key={i} initial={earned ? { opacity: 0, scale: 0.9 } : {}} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.08, type: 'spring', stiffness: 200 }}
+              className="card" style={{
+                padding: 16, textAlign: 'center', overflow: 'hidden',
+                ...(earned
+                  ? { borderColor: tier.color + '30' }
+                  : { opacity: 0.4, filter: 'grayscale(1)' }),
+              }}>
+              <div style={{ fontSize: 32, marginBottom: 6 }}>{tier.emoji}</div>
+              <h4 style={{ fontSize: 12, fontWeight: 600, color: earned ? tier.color : 'var(--text3)', marginBottom: 2 }}>{tier.name}</h4>
+              <p style={{ fontSize: 11, color: 'var(--text3)' }}>{tier.threshold} USDC</p>
+              {earned ? (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 8, fontSize: 11, color: 'var(--text3)' }}>
+                  <div><span style={{ fontWeight: 700, color: tier.color, fontSize: 14 }}>{totalDonated}</span><br />USDC</div>
+                  <div><span style={{ fontWeight: 700, color: tier.color, fontSize: 14 }}>{campaignsSupported}</span><br />Campaigns</div>
+                </div>
+              ) : (
+                <p style={{ fontSize: 10, color: 'var(--text3)', marginTop: 6 }}>🔒 Locked</p>
+              )}
+            </motion.div>
           );
         })}
       </div>

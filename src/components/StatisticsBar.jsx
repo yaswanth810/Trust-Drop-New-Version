@@ -19,7 +19,6 @@ function AnimatedCounter({ target, suffix = '', duration = 2000 }) {
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setCount(start + (end - start) * eased);
 
@@ -29,7 +28,7 @@ function AnimatedCounter({ target, suffix = '', duration = 2000 }) {
     return () => clearInterval(timer);
   }, [target, isInView, duration]);
 
-  const displayValue = suffix === 'ETH'
+  const displayValue = suffix === 'USDC'
     ? count.toFixed(2)
     : Math.round(count);
 
@@ -46,7 +45,7 @@ export default function StatisticsBar({ stats }) {
       icon: TrendingUp,
       label: 'Total Donated',
       value: stats.totalDonated || '0',
-      suffix: 'ETH',
+      suffix: 'USDC',
       color: 'text-accent',
     },
     {

@@ -1,17 +1,25 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Web3Provider } from './context/Web3Context';
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import { AnimatePresence, motion } from 'framer-motion';
+import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import CampaignDetail from './pages/CampaignDetail';
-import CreateCampaign from './pages/CreateCampaign';
-import ValidatorDashboard from './pages/ValidatorDashboard';
-import MyDonations from './pages/MyDonations';
-import Analytics from './pages/Analytics';
-import NgoProfile from './pages/NgoProfile';
-import Footer from './components/Footer';
+import NetworkBanner from './components/NetworkBanner';
+import { Loader2 } from 'lucide-react';
+
+// Lazy-loaded pages for performance
+const Home = lazy(() => import('./pages/Home'));
+const CampaignDetail = lazy(() => import('./pages/CampaignDetail'));
+const CreateCampaign = lazy(() => import('./pages/CreateCampaign'));
+const ValidatorDashboard = lazy(() => import('./pages/ValidatorDashboard'));
+const MyDonations = lazy(() => import('./pages/MyDonations'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const NgoProfile = lazy(() => import('./pages/NgoProfile'));
+const Confirm = lazy(() => import('./pages/Confirm'));
+const Whistleblower = lazy(() => import('./pages/Whistleblower'));
+const MyReports = lazy(() => import('./pages/MyReports'));
 
 const pageTransition = {
   initial: { opacity: 0, y: 12 },
@@ -19,20 +27,38 @@ const pageTransition = {
   exit: { opacity: 0, y: -8, transition: { duration: 0.2 } },
 };
 
+function PageLoader() {
+  return (
+    <div style={{
+      minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <Loader2 size={28} style={{ color: 'var(--accent)', animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
+        <p style={{ color: 'var(--text3)', fontSize: 14 }}>Loading...</p>
+      </div>
+    </div>
+  );
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
       <motion.main key={location.pathname} {...pageTransition}>
-        <Routes location={location}>
-          <Route path="/" element={<Home />} />
-          <Route path="/campaign/:id" element={<CampaignDetail />} />
-          <Route path="/create" element={<CreateCampaign />} />
-          <Route path="/validator" element={<ValidatorDashboard />} />
-          <Route path="/my-donations" element={<MyDonations />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/ngo/:address" element={<NgoProfile />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes location={location}>
+            <Route path="/" element={<Home />} />
+            <Route path="/campaign/:id" element={<CampaignDetail />} />
+            <Route path="/create" element={<CreateCampaign />} />
+            <Route path="/validator" element={<ValidatorDashboard />} />
+            <Route path="/my-donations" element={<MyDonations />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/ngo/:address" element={<NgoProfile />} />
+            <Route path="/confirm/:hash" element={<Confirm />} />
+            <Route path="/report" element={<Whistleblower />} />
+            <Route path="/my-reports" element={<MyReports />} />
+          </Routes>
+        </Suspense>
       </motion.main>
     </AnimatePresence>
   );
@@ -43,25 +69,29 @@ export default function App() {
     <BrowserRouter>
       <ThemeProvider>
         <Web3Provider>
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: 'rgba(26, 58, 107, 0.95)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#fff',
-                borderRadius: '12px',
-                padding: '14px 18px',
-                fontSize: '14px',
-              },
-              success: { iconTheme: { primary: '#00C896', secondary: '#fff' } },
-              error: { iconTheme: { primary: '#EF4444', secondary: '#fff' } },
-            }}
-          />
-          <Navbar />
-          <AnimatedRoutes />
+          <ErrorBoundary>
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  borderRadius: 'var(--radius)',
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  fontFamily: "'DM Sans', sans-serif",
+                  boxShadow: 'var(--shadow-lg)',
+                },
+                success: { iconTheme: { primary: 'var(--green)', secondary: '#fff' } },
+                error: { iconTheme: { primary: 'var(--red)', secondary: '#fff' } },
+              }}
+            />
+            <NetworkBanner />
+            <Navbar />
+            <AnimatedRoutes />
+          </ErrorBoundary>
         </Web3Provider>
       </ThemeProvider>
     </BrowserRouter>

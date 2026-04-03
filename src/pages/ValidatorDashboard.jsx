@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import { getAllCampaigns } from '../utils/contract';
 import ValidatorPanel from '../components/ValidatorPanel';
-import { formatEth, shortenAddress } from '../utils/helpers';
+import { shortenAddress } from '../utils/helpers';
 import { ethers } from 'ethers';
 import { motion } from 'framer-motion';
 import {
   Shield, CheckSquare, Loader2, Wallet, AlertCircle, Lock,
-  Trophy, TrendingUp, Target, AlertTriangle, Award
+  Trophy, TrendingUp, Target, AlertTriangle
 } from 'lucide-react';
 import Footer from '../components/Footer';
 import toast from 'react-hot-toast';
@@ -26,41 +26,22 @@ export default function ValidatorDashboard() {
       if (!contract || !account) return;
       setLoading(true);
       try {
-        // Check if validator
         const isVal = await contract.isValidator(account);
         setIsValidator(isVal);
-
         if (isVal) {
-          // Get all campaigns and filter for pending milestones
           const campaigns = await getAllCampaigns(contract);
           const pending = [];
-
-          campaigns.filter(Boolean).forEach((campaign) => {
+          campaigns.filter(Boolean).forEach(campaign => {
             (campaign.milestones || []).forEach((milestone, mIndex) => {
               if (milestone.ipfsHash && !milestone.isApproved && !milestone.fundsReleased) {
-                pending.push({
-                  campaignId: campaign.campaignId,
-                  campaignTitle: campaign.title,
-                  milestoneIndex: mIndex,
-                  milestone,
-                  ngoAddress: campaign.ngoAddress,
-                });
+                pending.push({ campaignId: campaign.campaignId, campaignTitle: campaign.title, milestoneIndex: mIndex, milestone, ngoAddress: campaign.ngoAddress });
               }
             });
           });
-
           setPendingMilestones(pending);
-
-          // Simulated validator stats (computed from on-chain events)
           const totalVotes = Math.floor(Math.random() * 20) + pending.length;
           const accuracy = totalVotes > 0 ? Math.round(75 + Math.random() * 25) : 0;
-          setValidatorStats({
-            totalVotes,
-            accuracy,
-            earnings: (Math.random() * 0.01).toFixed(6),
-          });
-
-          // Simulated leaderboard
+          setValidatorStats({ totalVotes, accuracy, earnings: (Math.random() * 0.01).toFixed(6) });
           const leaders = Array.from({ length: 5 }, (_, i) => ({
             address: i === 0 ? account : `0x${Math.random().toString(16).slice(2, 42).padEnd(40, '0')}`,
             accuracy: Math.round(85 - i * 5 + Math.random() * 8),
@@ -70,11 +51,8 @@ export default function ValidatorDashboard() {
           })).sort((a, b) => b.accuracy - a.accuracy);
           setLeaderboard(leaders);
         }
-      } catch (err) {
-        console.error('Error loading validator data:', err);
-      } finally {
-        setLoading(false);
-      }
+      } catch (err) { console.error('Error:', err); }
+      finally { setLoading(false); }
     }
     fetchData();
   }, [contract, account]);
@@ -91,29 +69,28 @@ export default function ValidatorDashboard() {
     } catch (err) {
       console.error('Registration error:', err);
       toast.error(err.reason || 'Registration failed', { id: 'register' });
-    } finally {
-      setRegistering(false);
-    }
+    } finally { setRegistering(false); }
   };
+
+  const PageHeader = () => (
+    <div style={{ marginBottom: 32 }}>
+      <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+        <CheckSquare size={24} style={{ color: 'var(--accent)' }} /> Validator Dashboard
+      </h2>
+      <p style={{ color: 'var(--text2)', fontSize: 15 }}>Review and verify milestone proofs submitted by NGOs</p>
+    </div>
+  );
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen pt-24">
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingTop: 40 }}>
         <div className="page-container">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold flex items-center gap-3 mb-2">
-              <CheckSquare size={28} className="text-accent" />
-              Validator Dashboard
-            </h1>
-            <p className="text-gray-400">Review and verify milestone proofs submitted by NGOs</p>
-          </div>
-          <div className="glass-card p-16 text-center">
-            <Wallet size={48} className="text-gray-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Connect Your Wallet</h2>
-            <p className="text-gray-400 mb-6">Connect MetaMask to access the validator dashboard</p>
-            <button onClick={connectWallet} className="btn-accent mx-auto">
-              <Wallet size={18} /> Connect Wallet
-            </button>
+          <PageHeader />
+          <div className="card" style={{ padding: '60px 40px', textAlign: 'center', maxWidth: 500, margin: '0 auto' }}>
+            <Wallet size={40} style={{ color: 'var(--text3)', margin: '0 auto 16px' }} />
+            <h3 style={{ marginBottom: 8 }}>Connect Your Wallet</h3>
+            <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 20 }}>Connect MetaMask to access the validator dashboard</p>
+            <button onClick={connectWallet} className="btn-primary"><Wallet size={16} /> Connect Wallet</button>
           </div>
         </div>
         <Footer />
@@ -123,191 +100,147 @@ export default function ValidatorDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-24 flex items-center justify-center">
-        <Loader2 size={40} className="text-accent animate-spin" />
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingTop: 40 }}>
+        <div className="page-container">
+          <PageHeader />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
+            {[1,2,3,4].map(i => (
+              <div key={i} className="card" style={{ padding: 20, textAlign: 'center' }}>
+                <div className="animate-shimmer" style={{ width: 24, height: 24, borderRadius: 'var(--radius-sm)', margin: '0 auto 10px' }} />
+                <div className="animate-shimmer" style={{ width: 60, height: 24, borderRadius: 'var(--radius-sm)', margin: '0 auto 6px' }} />
+                <div className="animate-shimmer" style={{ width: 80, height: 12, borderRadius: 'var(--radius-sm)', margin: '0 auto' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }
 
+  const statCards = [
+    { icon: Shield, color: 'var(--accent)', value: 'Active', label: 'Validator Status' },
+    { icon: Target, color: 'var(--blue)', value: `${validatorStats.accuracy}%`, label: 'Accuracy Score' },
+    { icon: CheckSquare, color: 'var(--green)', value: validatorStats.totalVotes, label: 'Total Votes' },
+    { icon: TrendingUp, color: 'var(--accent)', value: `${validatorStats.earnings} MATIC`, label: 'Earnings' },
+  ];
+
   return (
-    <div className="min-h-screen pt-24 pb-8">
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingTop: 40 }}>
       <div className="page-container">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold flex items-center gap-3 mb-2">
-            <CheckSquare size={28} className="text-accent" />
-            Validator Dashboard
-          </h1>
-          <p className="text-gray-400">Review and verify milestone proofs submitted by NGOs</p>
-        </div>
+        <PageHeader />
 
         {!isValidator ? (
-          /* Registration Card */
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-card p-10 text-center max-w-lg mx-auto"
-          >
-            <Shield size={48} className="text-accent mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Become a Validator</h2>
-            <p className="text-gray-400 mb-6">
-              Stake 0.01 ETH to register as a validator and help verify milestone proofs
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="card" style={{ padding: '48px 40px', textAlign: 'center', maxWidth: 500, margin: '0 auto' }}>
+            <div style={{ width: 56, height: 56, borderRadius: 'var(--radius-lg)', background: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <Shield size={28} style={{ color: 'var(--accent)' }} />
+            </div>
+            <h3 style={{ marginBottom: 8 }}>Become a Validator</h3>
+            <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 24, maxWidth: 360, margin: '0 auto 24px' }}>
+              Stake 0.01 MATIC to register as a validator and help verify milestone proofs from NGOs.
             </p>
-            <button
-              onClick={handleRegister}
-              disabled={registering}
-              className="btn-accent mx-auto"
-            >
-              {registering ? (
-                <><Loader2 size={18} className="animate-spin" /> Registering...</>
-              ) : (
-                <><Lock size={18} /> Register as Validator (0.01 ETH)</>
-              )}
+            <button onClick={handleRegister} disabled={registering} className="btn-primary btn-lg">
+              {registering ? <><Loader2 size={16} style={{ animation: 'spin 0.7s linear infinite' }} /> Registering...</>
+                : <><Lock size={16} /> Stake 0.01 MATIC & Register</>}
             </button>
           </motion.div>
         ) : (
-          <div className="space-y-8">
-            {/* Validator Profile Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-1 md:grid-cols-4 gap-4"
-            >
-              <div className="glass-card p-5 text-center">
-                <Shield size={22} className="text-accent mx-auto mb-2" />
-                <p className="text-2xl font-bold text-accent">Active</p>
-                <p className="text-gray-400 text-xs mt-1">Validator Status</p>
-              </div>
-              <div className="glass-card p-5 text-center">
-                <Target size={22} className="text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold">{validatorStats.accuracy}%</p>
-                <p className="text-gray-400 text-xs mt-1">Accuracy Score</p>
-              </div>
-              <div className="glass-card p-5 text-center">
-                <CheckSquare size={22} className="text-green-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold">{validatorStats.totalVotes}</p>
-                <p className="text-gray-400 text-xs mt-1">Total Votes</p>
-              </div>
-              <div className="glass-card p-5 text-center">
-                <TrendingUp size={22} className="text-purple-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold">{validatorStats.earnings} ETH</p>
-                <p className="text-gray-400 text-xs mt-1">Earnings</p>
-              </div>
-            </motion.div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {/* Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+              {statCards.map((s, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                  className="card" style={{ padding: 20, textAlign: 'center' }}>
+                  <s.icon size={20} style={{ color: s.color, margin: '0 auto 8px' }} />
+                  <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "'DM Mono', monospace", color: 'var(--text)', marginBottom: 2 }}>{s.value}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>{s.label}</div>
+                </motion.div>
+              ))}
+            </div>
 
-            {/* Warning if accuracy low */}
+            {/* Low Accuracy Warning */}
             {validatorStats.accuracy < 60 && validatorStats.totalVotes > 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3"
-              >
-                <AlertTriangle size={20} className="text-red-400 flex-shrink-0" />
+              <div style={{ padding: 14, borderRadius: 'var(--radius-lg)', background: 'var(--red-bg)', border: '1px solid var(--red-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <AlertTriangle size={18} style={{ color: 'var(--red)', flexShrink: 0 }} />
                 <div>
-                  <p className="font-semibold text-red-400 text-sm">Low Accuracy Warning</p>
-                  <p className="text-red-300 text-xs">Your accuracy is below 60%. Continued low accuracy may result in stake slashing.</p>
+                  <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--red)' }}>Low Accuracy Warning</p>
+                  <p style={{ fontSize: 12, color: 'var(--red)', opacity: 0.7 }}>Below 60%. Continued low accuracy may result in stake slashing.</p>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Pending Milestones */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <AlertCircle size={20} className="text-accent" />
+            <div>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <AlertCircle size={18} style={{ color: 'var(--accent)' }} />
                 Milestones Pending Review ({pendingMilestones.length})
-              </h2>
-
+              </h3>
               {pendingMilestones.length === 0 ? (
-                <div className="glass-card p-12 text-center">
-                  <CheckSquare size={40} className="text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-400">No milestones pending review</p>
-                  <p className="text-gray-500 text-sm mt-1">Check back later for new proof submissions</p>
+                <div className="card" style={{ padding: '48px 20px', textAlign: 'center' }}>
+                  <CheckSquare size={36} style={{ color: 'var(--border2)', margin: '0 auto 12px' }} />
+                  <p style={{ color: 'var(--text2)', fontSize: 14 }}>No milestones pending review</p>
+                  <p style={{ color: 'var(--text3)', fontSize: 12, marginTop: 4 }}>Check back later for new proof submissions</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {pendingMilestones.map((item, i) => (
-                    <ValidatorPanel
-                      key={`${item.campaignId}-${item.milestoneIndex}`}
-                      campaignId={item.campaignId}
-                      campaignTitle={item.campaignTitle}
-                      milestoneIndex={item.milestoneIndex}
-                      milestone={item.milestone}
-                      ngoAddress={item.ngoAddress}
-                      contract={contract}
-                    />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {pendingMilestones.map((item) => (
+                    <ValidatorPanel key={`${item.campaignId}-${item.milestoneIndex}`}
+                      campaignId={item.campaignId} campaignTitle={item.campaignTitle}
+                      milestoneIndex={item.milestoneIndex} milestone={item.milestone}
+                      ngoAddress={item.ngoAddress} contract={contract} />
                   ))}
                 </div>
               )}
-            </motion.div>
+            </div>
 
             {/* Leaderboard */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Trophy size={20} className="text-yellow-400" />
-                Validator Leaderboard
-              </h2>
-
-              <div className="glass-card-static overflow-hidden">
-                <table className="w-full">
+            <div>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <Trophy size={18} style={{ color: 'var(--amber)' }} /> Validator Leaderboard
+              </h3>
+              <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr className="border-b border-white/5">
-                      <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider p-4">Rank</th>
-                      <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider p-4">Validator</th>
-                      <th className="text-center text-xs font-medium text-gray-400 uppercase tracking-wider p-4">Accuracy</th>
-                      <th className="text-center text-xs font-medium text-gray-400 uppercase tracking-wider p-4">Votes</th>
-                      <th className="text-right text-xs font-medium text-gray-400 uppercase tracking-wider p-4">Earnings</th>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      {['Rank', 'Validator', 'Accuracy', 'Votes', 'Earnings'].map((h, i) => (
+                        <th key={h} style={{
+                          padding: '12px 16px', fontSize: 11, fontWeight: 600, color: 'var(--text3)',
+                          textTransform: 'uppercase', letterSpacing: '0.05em',
+                          textAlign: i >= 2 ? (i === 4 ? 'right' : 'center') : 'left',
+                        }}>{h}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {leaderboard.map((validator, i) => (
-                      <tr
-                        key={i}
-                        className={`border-b border-white/3 ${
-                          validator.isYou ? 'bg-accent/5' : 'hover:bg-white/3'
-                        } transition-colors`}
-                      >
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            {i === 0 && <span className="text-yellow-400">🥇</span>}
-                            {i === 1 && <span className="text-gray-300">🥈</span>}
-                            {i === 2 && <span className="text-amber-600">🥉</span>}
-                            {i > 2 && <span className="text-gray-500 ml-1">#{i + 1}</span>}
-                          </div>
+                    {leaderboard.map((v, i) => (
+                      <tr key={i} style={{
+                        borderBottom: '1px solid var(--border)',
+                        background: v.isYou ? 'var(--accent-light)' : i === 0 ? 'var(--amber-bg)' : 'transparent',
+                        transition: 'background 0.1s',
+                      }}>
+                        <td style={{ padding: '12px 16px' }}>
+                          {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span style={{ color: 'var(--text3)', marginLeft: 4 }}>#{i + 1}</span>}
                         </td>
-                        <td className="p-4">
-                          <span className={`text-sm font-mono ${validator.isYou ? 'text-accent font-semibold' : 'text-gray-300'}`}>
-                            {shortenAddress(validator.address)}
-                            {validator.isYou && <span className="ml-2 badge badge-approved !text-[10px]">You</span>}
+                        <td style={{ padding: '12px 16px' }}>
+                          <span className="mono" style={{ fontSize: 13, fontWeight: v.isYou ? 600 : 400, color: v.isYou ? 'var(--accent)' : 'var(--text)' }}>
+                            {shortenAddress(v.address)}
+                          </span>
+                          {v.isYou && <span className="badge badge-review" style={{ marginLeft: 8, fontSize: 9, padding: '1px 6px' }}>You</span>}
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <span style={{ fontWeight: 600, fontSize: 13, color: v.accuracy >= 80 ? 'var(--green)' : v.accuracy >= 60 ? 'var(--amber)' : 'var(--red)' }}>
+                            {v.accuracy}%
                           </span>
                         </td>
-                        <td className="p-4 text-center">
-                          <span className={`font-bold text-sm ${
-                            validator.accuracy >= 80 ? 'text-green-400' :
-                            validator.accuracy >= 60 ? 'text-yellow-400' : 'text-red-400'
-                          }`}>
-                            {validator.accuracy}%
-                          </span>
-                        </td>
-                        <td className="p-4 text-center text-sm text-gray-300">
-                          {validator.totalVotes}
-                        </td>
-                        <td className="p-4 text-right text-sm text-gray-300">
-                          {validator.earnings} ETH
-                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: 13, color: 'var(--text2)' }}>{v.totalVotes}</td>
+                        <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: 13, color: 'var(--text2)', fontFamily: "'DM Mono', monospace" }}>{v.earnings} MATIC</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
       </div>

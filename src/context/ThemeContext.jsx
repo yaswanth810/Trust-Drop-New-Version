@@ -6,16 +6,17 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('trustdrop-theme');
     if (saved) return saved;
-    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    // Light-first: default to light unless user prefers dark
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'light') {
-      root.classList.add('light');
-      root.classList.remove('dark');
-    } else {
+    if (theme === 'dark') {
       root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.remove('dark');
       root.classList.remove('light');
     }
     localStorage.setItem('trustdrop-theme', theme);

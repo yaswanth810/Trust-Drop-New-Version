@@ -6,122 +6,257 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useWeb3 } from '../context/Web3Context';
 import { useTheme } from '../context/ThemeContext';
 import { shortenAddress } from '../utils/helpers';
-import { 
-  Shield, Menu, X, Home, PlusCircle, CheckSquare, Heart, Wallet,
-  BarChart3, Moon, Sun, Globe
+import {
+  Shield, Menu, X, Home, PlusCircle, CheckSquare,
+  BarChart3, Moon, Sun, Globe, Wallet, ChevronDown,
+  Copy, CheckCircle2, ShieldAlert, Heart
 } from 'lucide-react';
 
 export default function Navbar() {
-  const { account, isConnected, connectWallet, balance, loading } = useWeb3();
+  const { account, isConnected, connectWallet, balance, usdcBalance, loading, pendingProofCount } = useWeb3();
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [walletDropdown, setWalletDropdown] = useState(false);
+  const [copied, setCopied] = useState(false);
   const location = useLocation();
 
   const navLinks = [
     { to: '/', label: 'Home', icon: Home },
     { to: '/create', label: 'Create Campaign', icon: PlusCircle },
-    { to: '/validator', label: 'Validator', icon: CheckSquare },
-    { to: '/my-donations', label: 'My Donations', icon: Heart },
+    { to: '/validator', label: 'Validator', icon: CheckSquare, badge: pendingProofCount },
     { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { to: '/my-donations', label: 'My Donations', icon: Heart, requiresAuth: true },
+    { to: '/report', label: 'Report Fraud', icon: ShieldAlert, requiresAuth: true },
   ];
 
   const isActive = (path) => location.pathname === path;
 
+  const copyAddress = () => {
+    navigator.clipboard.writeText(account);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-800/80 backdrop-blur-xl border-b border-white/5">
-      <div className="page-container">
-        <div className="flex items-center justify-between h-16 md:h-18">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-accent to-accent-700 rounded-lg flex items-center justify-center group-hover:shadow-lg group-hover:shadow-accent/20 transition-all">
-              <Shield size={20} className="text-white" />
-            </div>
-            <span className="text-lg font-bold">
-              Trust<span className="gradient-text">Drop</span>
-            </span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                  isActive(link.to)
-                    ? 'bg-accent/10 text-accent'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <link.icon size={16} />
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Right Controls */}
-          <div className="flex items-center gap-2">
-            {/* Language Toggle */}
-            <button
-              onClick={() => {
-                const newLang = i18n.language === 'en' ? 'te' : 'en';
-                i18n.changeLanguage(newLang);
-              }}
-              className="p-2 rounded-xl text-gray-400 hover:text-accent hover:bg-white/5 transition-all flex items-center gap-1"
-              title="Switch Language"
-            >
-              <Globe size={16} />
-              <span className="text-xs font-medium">{i18n.language === 'en' ? 'తె' : 'EN'}</span>
-            </button>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl text-gray-400 hover:text-accent hover:bg-white/5 transition-all"
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
-            {/* Wallet */}
-            {isConnected ? (
-              <div className="hidden md:flex items-center gap-2">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm">
-                  <span className="status-dot connected" />
-                  <span className="text-gray-300">{parseFloat(balance).toFixed(3)} ETH</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/20 text-sm">
-                  <Wallet size={14} className="text-accent" />
-                  <span className="text-accent font-medium">{shortenAddress(account)}</span>
-                </div>
+    <>
+      <nav style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+        height: 'var(--nav-height)',
+        background: theme === 'dark' ? 'rgba(13,13,18,0.88)' : 'rgba(255,255,255,0.88)',
+        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid var(--border)',
+      }}>
+        <div className="page-container" style={{ height: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+            
+            {/* Logo */}
+            <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+              <div style={{
+                width: 34, height: 34,
+                background: 'var(--accent)',
+                borderRadius: 'var(--radius)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Shield size={18} color="#fff" />
               </div>
-            ) : (
-              <button
-                onClick={connectWallet}
-                disabled={loading}
-                className="btn-accent text-sm !py-2 !px-5"
-              >
-                {loading ? (
-                  <span className="spinner" />
-                ) : (
-                  <>
-                    <Wallet size={16} />
-                    <span className="hidden sm:inline">Connect Wallet</span>
-                  </>
-                )}
-              </button>
-            )}
+              <span style={{
+                fontFamily: "'Instrument Serif', Georgia, serif",
+                fontSize: '20px', color: 'var(--text)', letterSpacing: '-0.01em',
+              }}>
+                Trust<span style={{ color: 'var(--accent)' }}>Drop</span>
+              </span>
+            </Link>
 
-            {/* Mobile Menu Toggle */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
-            >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            {/* Desktop Nav Links */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}
+                 className="hidden md:flex">
+              {navLinks.map((link) => {
+                if (link.requiresAuth && !isConnected) return null;
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '6px 12px', borderRadius: 'var(--radius)',
+                      fontSize: '14px', fontWeight: 500, textDecoration: 'none',
+                      color: isActive(link.to) ? 'var(--text)' : 'var(--text2)',
+                      background: isActive(link.to) ? 'var(--surface2)' : 'transparent',
+                      transition: 'all 0.15s',
+                      position: 'relative',
+                    }}
+                    onMouseEnter={e => {
+                      if (!isActive(link.to)) {
+                        e.currentTarget.style.color = 'var(--text)';
+                        e.currentTarget.style.background = 'var(--surface2)';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (!isActive(link.to)) {
+                        e.currentTarget.style.color = 'var(--text2)';
+                        e.currentTarget.style.background = 'transparent';
+                      }
+                    }}
+                  >
+                    <link.icon size={15} />
+                    {link.label}
+                    {link.badge > 0 && (
+                      <span style={{
+                        position: 'absolute', top: -4, right: -4,
+                        minWidth: 16, height: 16, borderRadius: 8,
+                        background: 'var(--red)', color: '#fff',
+                        fontSize: 10, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '0 4px',
+                      }}>
+                        {link.badge > 9 ? '9+' : link.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Right Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              
+              {/* Language Toggle */}
+              <button
+                onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'te' : 'en')}
+                style={{
+                  padding: '6px 10px', borderRadius: 'var(--radius)',
+                  background: 'transparent', border: '1px solid var(--border)',
+                  color: 'var(--text2)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                <Globe size={13} />
+                {i18n.language === 'en' ? 'తె' : 'EN'}
+              </button>
+
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                style={{
+                  padding: '6px', borderRadius: 'var(--radius)',
+                  background: 'transparent', border: '1px solid var(--border)',
+                  color: 'var(--text2)', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.15s', width: 34, height: 34,
+                }}
+              >
+                {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+              </button>
+
+              {/* Wallet */}
+              {isConnected ? (
+                <div style={{ position: 'relative' }} className="hidden md:block">
+                  <button
+                    onClick={() => setWalletDropdown(!walletDropdown)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      padding: '6px 12px 6px 10px',
+                      background: 'var(--surface2)', border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-pill)', cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <span className="status-dot connected" />
+                    <span style={{
+                      fontFamily: "'DM Mono', monospace", fontSize: 13,
+                      color: 'var(--text)', fontWeight: 500,
+                    }}>
+                      {shortenAddress(account)}
+                    </span>
+                    <ChevronDown size={13} style={{ color: 'var(--text3)' }} />
+                  </button>
+
+                  {/* Dropdown */}
+                  <AnimatePresence>
+                    {walletDropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 4 }}
+                        style={{
+                          position: 'absolute', top: '100%', right: 0, marginTop: 6,
+                          width: 240, background: 'var(--surface)',
+                          border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)',
+                          boxShadow: 'var(--shadow-lg)', overflow: 'hidden',
+                        }}
+                        onMouseLeave={() => setWalletDropdown(false)}
+                      >
+                        <div style={{ padding: 16, borderBottom: '1px solid var(--border)' }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                            Balances
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 4 }}>
+                            <span style={{ color: 'var(--text2)' }}>USDC</span>
+                            <span style={{ fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Mono', monospace" }}>{usdcBalance}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+                            <span style={{ color: 'var(--text2)' }}>MATIC</span>
+                            <span style={{ fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Mono', monospace" }}>{parseFloat(balance).toFixed(3)}</span>
+                          </div>
+                        </div>
+                        <div style={{ padding: 8 }}>
+                          <button onClick={copyAddress} style={{
+                            width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                            padding: '8px 12px', borderRadius: 'var(--radius)',
+                            background: 'transparent', border: 'none', cursor: 'pointer',
+                            color: 'var(--text2)', fontSize: 13, fontWeight: 500,
+                            transition: 'background 0.1s',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--surface2)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            {copied ? <CheckCircle2 size={14} style={{ color: 'var(--green)' }} /> : <Copy size={14} />}
+                            {copied ? 'Copied!' : 'Copy Address'}
+                          </button>
+                          <Link to="/my-donations" style={{
+                            width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                            padding: '8px 12px', borderRadius: 'var(--radius)',
+                            color: 'var(--text2)', fontSize: 13, fontWeight: 500,
+                            textDecoration: 'none', transition: 'background 0.1s',
+                          }}
+                          onClick={() => setWalletDropdown(false)}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--surface2)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <Heart size={14} />
+                            My Donations
+                          </Link>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <button onClick={connectWallet} disabled={loading} className="btn-primary btn-sm" style={{ gap: 6 }}>
+                  {loading ? <span className="spinner" /> : <><Wallet size={15} /><span className="hidden sm:inline">Connect Wallet</span></>}
+                </button>
+              )}
+
+              {/* Mobile Menu Toggle */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden"
+                style={{
+                  padding: 6, background: 'transparent', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)', cursor: 'pointer', color: 'var(--text2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </nav>
+
+      {/* Spacer */}
+      <div style={{ height: 'var(--nav-height)' }} />
 
       {/* Mobile Menu */}
       <AnimatePresence>
@@ -130,35 +265,63 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-navy-800/95 backdrop-blur-xl border-b border-white/5 overflow-hidden"
+            style={{
+              position: 'fixed', top: 'var(--nav-height)', left: 0, right: 0, zIndex: 49,
+              background: theme === 'dark' ? 'rgba(17,17,16,0.95)' : 'rgba(247,246,242,0.95)',
+              backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)',
+              overflow: 'hidden',
+            }}
           >
-            <div className="page-container py-4 flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                    isActive(link.to)
-                      ? 'bg-accent/10 text-accent'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <link.icon size={18} />
-                  {link.label}
-                </Link>
-              ))}
+            <div className="page-container" style={{ padding: '12px 24px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {navLinks.map((link) => {
+                if (link.requiresAuth && !isConnected) return null;
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '12px 16px', borderRadius: 'var(--radius)',
+                      fontSize: 14, fontWeight: 500, textDecoration: 'none',
+                      color: isActive(link.to) ? 'var(--text)' : 'var(--text2)',
+                      background: isActive(link.to) ? 'var(--surface2)' : 'transparent',
+                    }}
+                  >
+                    <link.icon size={18} />
+                    {link.label}
+                    {link.badge > 0 && (
+                      <span style={{
+                        marginLeft: 'auto', minWidth: 20, height: 20, borderRadius: 10,
+                        background: 'var(--red)', color: '#fff', fontSize: 10, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {link.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
               {isConnected && (
-                <div className="flex items-center gap-2 px-4 py-3 mt-2 rounded-xl bg-accent/10 border border-accent/20">
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '12px 16px', marginTop: 4,
+                  borderRadius: 'var(--radius)',
+                  background: 'var(--accent-light)', border: '1px solid var(--accent-border)',
+                }}>
                   <span className="status-dot connected" />
-                  <span className="text-accent text-sm font-medium">{shortenAddress(account)}</span>
-                  <span className="text-gray-400 text-sm ml-auto">{parseFloat(balance).toFixed(3)} ETH</span>
+                  <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: 'var(--accent)', fontWeight: 500 }}>
+                    {shortenAddress(account)}
+                  </span>
+                  <span style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--text2)' }}>
+                    {usdcBalance} USDC
+                  </span>
                 </div>
               )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 }

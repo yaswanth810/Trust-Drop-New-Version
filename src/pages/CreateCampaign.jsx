@@ -2,14 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
 import { createNewCampaign } from '../utils/contract';
-import { formatEth } from '../utils/helpers';
-import { ethers } from 'ethers';
 import { motion } from 'framer-motion';
-import { PlusCircle, Trash2, Loader2, ArrowLeft, Target, Wallet, Tag } from 'lucide-react';
-
-const CATEGORIES = ['Relief', 'Education', 'Medical', 'Infrastructure', 'Environment'];
+import { PlusCircle, Trash2, Loader2, ArrowLeft, Target, Wallet, Tag, Eye } from 'lucide-react';
 import Footer from '../components/Footer';
 import toast from 'react-hot-toast';
+
+const CATEGORIES = ['Relief', 'Education', 'Medical', 'Infrastructure', 'Environment'];
 
 export default function CreateCampaign() {
   const { contract, isConnected, connectWallet } = useWeb3();
@@ -23,268 +21,226 @@ export default function CreateCampaign() {
   ]);
   const [loading, setLoading] = useState(false);
 
-  const addMilestone = () => {
-    setMilestones([...milestones, { description: '', amount: '', deadline: '' }]);
-  };
+  const addMilestone = () => setMilestones([...milestones, { description: '', amount: '', deadline: '' }]);
+  const removeMilestone = (i) => { if (milestones.length > 1) setMilestones(milestones.filter((_, idx) => idx !== i)); };
+  const updateMilestone = (i, field, value) => { const u = [...milestones]; u[i][field] = value; setMilestones(u); };
 
-  const removeMilestone = (index) => {
-    if (milestones.length <= 1) return;
-    setMilestones(milestones.filter((_, i) => i !== index));
-  };
-
-  const updateMilestone = (index, field, value) => {
-    const updated = [...milestones];
-    updated[index][field] = value;
-    setMilestones(updated);
-  };
-
-  const totalAmount = milestones.reduce((sum, m) => {
-    const amount = parseFloat(m.amount) || 0;
-    return sum + amount;
-  }, 0);
+  const totalAmount = milestones.reduce((s, m) => s + (parseFloat(m.amount) || 0), 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!isConnected) {
-      connectWallet();
-      return;
-    }
-
-    if (!title.trim()) {
-      toast.error('Please enter a campaign title');
-      return;
-    }
-
-    if (!description.trim()) {
-      toast.error('Please enter a campaign description');
-      return;
-    }
-
-    const invalidMilestone = milestones.find(
-      (m) => !m.description.trim() || !m.amount || parseFloat(m.amount) <= 0 || !m.deadline
-    );
-    if (invalidMilestone) {
-      toast.error('Please fill in all milestone fields');
-      return;
-    }
+    if (!isConnected) { connectWallet(); return; }
+    if (!title.trim()) { toast.error('Please enter a campaign title'); return; }
+    if (!description.trim()) { toast.error('Please enter a description'); return; }
+    const invalid = milestones.find(m => !m.description.trim() || !m.amount || parseFloat(m.amount) <= 0 || !m.deadline);
+    if (invalid) { toast.error('Please fill in all milestone fields'); return; }
 
     try {
       setLoading(true);
-      const descs = milestones.map((m) => m.description);
-      const amounts = milestones.map((m) => m.amount);
-      const deadlines = milestones.map((m) => m.deadline);
+      const descs = milestones.map(m => m.description);
+      const amounts = milestones.map(m => m.amount);
+      const deadlines = milestones.map(m => m.deadline);
+      const benCounts = milestones.map(() => '0');
 
       toast.loading('Creating campaign on-chain...', { id: 'create-campaign' });
       const fullDescription = `[${category}] ${description}`;
-      const tx = await createNewCampaign(contract, title, fullDescription, descs, amounts, deadlines);
+      const tx = await createNewCampaign(contract, title, fullDescription, descs, amounts, deadlines, benCounts);
       toast.loading('Transaction pending...', { id: 'create-campaign' });
       await tx.wait();
       toast.success('Campaign created successfully! ✓', { id: 'create-campaign' });
-
       navigate('/');
     } catch (err) {
       console.error('Create campaign error:', err);
       toast.error(err.reason || 'Failed to create campaign', { id: 'create-campaign' });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen pt-24">
-      <div className="page-container max-w-3xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {/* Header */}
-          <div className="mb-8">
-            <button
-              onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-accent mb-4 text-sm transition-colors"
-            >
-              <ArrowLeft size={16} />
-              Back
-            </button>
-            <h1 className="text-3xl font-bold text-white mb-2">Create New Campaign</h1>
-            <p className="text-gray-400">Define your campaign milestones and fund allocation</p>
-          </div>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      <div className="page-container" style={{ paddingTop: 40, paddingBottom: 40 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          {/* Back */}
+          <button onClick={() => navigate(-1)} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+            color: 'var(--text2)', fontSize: 14, cursor: 'pointer', marginBottom: 16,
+          }}>
+            <ArrowLeft size={16} /> Back
+          </button>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Campaign Details */}
-            <div className="glass-card p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-white">Campaign Details</h2>
+          <h2 style={{ marginBottom: 4 }}>Create a Campaign</h2>
+          <p style={{ color: 'var(--text2)', fontSize: 15, marginBottom: 32 }}>
+            Define your campaign milestones and fund allocation
+          </p>
 
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">Campaign Title</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Vizag Flood Relief 2025"
-                  className="input-field"
-                  disabled={loading}
-                />
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 32, alignItems: 'start' }}>
+            {/* Left — Form */}
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe your campaign goals, beneficiaries, and how funds will be used..."
-                  className="input-field"
-                  rows={4}
-                  disabled={loading}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-2 flex items-center gap-1">
-                  <Tag size={14} /> Category
-                </label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="input-field"
-                  disabled={loading}
-                >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Milestones */}
-            <div className="glass-card p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Target size={18} className="text-accent" />
-                  Milestones
-                </h2>
-                <div className="text-sm">
-                  <span className="text-gray-400">Total: </span>
-                  <span className="text-accent font-bold">{totalAmount.toFixed(4)} ETH</span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {milestones.map((milestone, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-accent">
-                        Milestone {index + 1}
-                      </span>
-                      {milestones.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeMilestone(index)}
-                          className="p-1.5 text-gray-400 hover:text-red-400 transition-colors"
-                          disabled={loading}
-                        >
-                          <Trash2 size={16} />
+              {/* Campaign Details */}
+              <div className="card" style={{ padding: 24 }}>
+                <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  Campaign Details
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 6 }}>Campaign Title</label>
+                    <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                      placeholder="e.g., Vizag Flood Relief 2025" className="input-field" disabled={loading} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 6 }}>Description</label>
+                    <textarea value={description} onChange={e => setDescription(e.target.value)}
+                      placeholder="Describe your campaign goals, beneficiaries, and how funds will be used..."
+                      className="input-field" rows={4} disabled={loading} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 8 }}>
+                      <Tag size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Category
+                    </label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {CATEGORIES.map(cat => (
+                        <button key={cat} type="button" onClick={() => setCategory(cat)}
+                          style={{
+                            padding: '6px 14px', borderRadius: 'var(--radius-pill)', fontSize: 13, fontWeight: 500,
+                            border: '1px solid', cursor: 'pointer', transition: 'all 0.15s',
+                            ...(category === cat
+                              ? { background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }
+                              : { background: 'var(--surface2)', color: 'var(--text2)', borderColor: 'var(--border)' }),
+                          }}>
+                          {cat}
                         </button>
-                      )}
+                      ))}
                     </div>
-
-                    <input
-                      type="text"
-                      value={milestone.description}
-                      onChange={(e) => updateMilestone(index, 'description', e.target.value)}
-                      placeholder="Milestone description"
-                      className="input-field text-sm"
-                      disabled={loading}
-                    />
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Amount (ETH)</label>
-                        <input
-                          type="number"
-                          step="0.001"
-                          min="0"
-                          value={milestone.amount}
-                          onChange={(e) => updateMilestone(index, 'amount', e.target.value)}
-                          placeholder="0.05"
-                          className="input-field text-sm"
-                          disabled={loading}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Deadline</label>
-                        <input
-                          type="date"
-                          value={milestone.deadline}
-                          onChange={(e) => updateMilestone(index, 'deadline', e.target.value)}
-                          className="input-field text-sm"
-                          disabled={loading}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+                  </div>
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={addMilestone}
-                disabled={loading}
-                className="mt-4 w-full py-3 rounded-xl border-2 border-dashed border-white/10 text-gray-400 text-sm font-medium hover:border-accent/30 hover:text-accent transition-all flex items-center justify-center gap-2"
-              >
-                <PlusCircle size={16} />
-                Add Milestone
+              {/* Milestones */}
+              <div className="card" style={{ padding: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Target size={18} style={{ color: 'var(--accent)' }} /> Milestones
+                  </h3>
+                  <span style={{ fontSize: 14 }}>
+                    <span style={{ color: 'var(--text3)' }}>Total: </span>
+                    <span style={{ color: 'var(--accent)', fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>{totalAmount.toFixed(2)} USDC</span>
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {milestones.map((milestone, index) => (
+                    <motion.div key={index} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                      style={{
+                        padding: 16, borderRadius: 'var(--radius-lg)',
+                        background: 'var(--surface2)', border: '1px solid var(--border)',
+                      }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>
+                          Milestone {index + 1}
+                        </span>
+                        {milestones.length > 1 && (
+                          <button type="button" onClick={() => removeMilestone(index)} disabled={loading}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 4 }}>
+                            <Trash2 size={15} />
+                          </button>
+                        )}
+                      </div>
+                      <input type="text" value={milestone.description}
+                        onChange={e => updateMilestone(index, 'description', e.target.value)}
+                        placeholder="Milestone description" className="input-field" style={{ marginBottom: 10, fontSize: 13 }}
+                        disabled={loading} />
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: 11, color: 'var(--text3)', marginBottom: 4, fontWeight: 500 }}>Amount (USDC)</label>
+                          <input type="number" step="0.01" min="0" value={milestone.amount}
+                            onChange={e => updateMilestone(index, 'amount', e.target.value)}
+                            placeholder="100" className="input-field" style={{ fontSize: 13 }} disabled={loading} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: 11, color: 'var(--text3)', marginBottom: 4, fontWeight: 500 }}>Deadline</label>
+                          <input type="date" value={milestone.deadline}
+                            onChange={e => updateMilestone(index, 'deadline', e.target.value)}
+                            className="input-field" style={{ fontSize: 13 }} disabled={loading} />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <button type="button" onClick={addMilestone} disabled={loading}
+                  style={{
+                    width: '100%', marginTop: 12, padding: '12px', borderRadius: 'var(--radius)',
+                    border: '2px dashed var(--border)', background: 'transparent',
+                    color: 'var(--text3)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    transition: 'all 0.15s',
+                  }}>
+                  <PlusCircle size={15} /> Add Milestone
+                </button>
+              </div>
+
+              {/* Submit */}
+              <button type="submit" disabled={loading} className="btn-primary btn-lg btn-full"
+                style={{ padding: '14px 24px', fontSize: 15 }}>
+                {loading ? (
+                  <><Loader2 size={18} style={{ animation: 'spin 0.7s linear infinite' }} /> Deploying Campaign...</>
+                ) : !isConnected ? (
+                  <><Wallet size={18} /> Connect Wallet to Create</>
+                ) : (
+                  <><PlusCircle size={18} /> Deploy Campaign — {totalAmount.toFixed(2)} USDC goal</>
+                )}
               </button>
-            </div>
+              <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text3)' }}>≈ 0.002 MATIC gas fee</p>
+            </form>
 
-            {/* Summary */}
-            <div className="glass-card p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Summary</h2>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Milestones</span>
-                  <span className="text-white">{milestones.length}</span>
+            {/* Right — Live Preview */}
+            <div style={{ position: 'sticky', top: 'calc(var(--nav-height) + 20px)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, color: 'var(--text3)', fontSize: 13, fontWeight: 500 }}>
+                <Eye size={14} /> Live Preview
+              </div>
+              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '20px 20px 16px' }}>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                    <span className="badge badge-locked" style={{ fontSize: 10, padding: '2px 8px' }}>{category}</span>
+                  </div>
+                  <h4 style={{ marginBottom: 6, color: title ? 'var(--text)' : 'var(--text3)' }}>
+                    {title || 'Campaign Title'}
+                  </h4>
+                  <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.5, marginBottom: 16,
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {description || 'Campaign description will appear here...'}
+                  </p>
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>0 USDC</span>
+                      <span style={{ fontSize: 13, color: 'var(--text3)' }}>of {totalAmount.toFixed(0)} USDC</span>
+                    </div>
+                    <div className="progress-bar" style={{ height: 5 }}>
+                      <div className="progress-bar-fill" style={{ width: '0%' }} />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Total Goal</span>
-                  <span className="text-accent font-bold">{totalAmount.toFixed(4)} ETH</span>
+                {milestones.filter(m => m.description).length > 0 && (
+                  <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+                      Milestones
+                    </div>
+                    {milestones.filter(m => m.description).map((m, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--text2)' }}>
+                        <span>{m.description}</span>
+                        {m.amount && <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--text3)' }}>{m.amount} USDC</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', background: 'var(--surface2)' }}>
+                  <span style={{ fontSize: 12, color: 'var(--text3)' }}>0 donors · Just now</span>
                 </div>
               </div>
             </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-accent justify-center text-base !py-4"
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={20} className="animate-spin" />
-                  Deploying Campaign...
-                </>
-              ) : !isConnected ? (
-                <>
-                  <Wallet size={20} />
-                  Connect Wallet to Create
-                </>
-              ) : (
-                <>
-                  <PlusCircle size={20} />
-                  Deploy Campaign ({totalAmount.toFixed(4)} ETH goal)
-                </>
-              )}
-            </button>
-          </form>
+          </div>
         </motion.div>
       </div>
-
       <Footer />
     </div>
   );

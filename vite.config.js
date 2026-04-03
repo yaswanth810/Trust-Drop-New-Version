@@ -1,10 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { transakProxy } from './plugins/transak-proxy.js'
 
 export default defineConfig({
   plugins: [
     react(),
+    transakProxy(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt'],
@@ -12,8 +14,8 @@ export default defineConfig({
         name: 'TrustDrop',
         short_name: 'TrustDrop',
         description: 'Blockchain-Powered NGO Fund Transparency Platform',
-        theme_color: '#0A1628',
-        background_color: '#0A1628',
+        theme_color: '#6C5CE7',
+        background_color: '#FAFAFA',
         display: 'standalone',
         start_url: '/',
         icons: [
