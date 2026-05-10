@@ -249,6 +249,14 @@ TrustDrop uses a premium fintech-grade design system inspired by Mercury:
 
 Built for Hackathon 2026 — Vizag, India 🇮🇳
 
+## 🤝 Contributors
+
+<a href="https://github.com/balu061128">
+  <img src="https://github.com/balu061128.png" width="60" height="60" style="border-radius:50%" alt="balu061128"/>
+  <br />
+  <sub><b>balu061128</b></sub>
+</a>
+
 ---
 
 ## 📝 License
